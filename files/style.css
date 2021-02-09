@@ -1,0 +1,164 @@
+body {
+  margin: 0;
+  background: #2c2c2c;
+  font-family: "Comic Sans MS", sans-serif;
+  color: #fff;
+}
+button {
+  cursor: pointer;
+  padding: 10px;
+  background-color: #1c1c1c;
+  border: none;
+  color: #fff;
+  outline: none;
+}
+button:hover {
+  background-color: #fff;
+  color: #1c1c1c;
+}
+p {
+  margin: 0;
+}
+input[type="text"] {
+  background: #1c1c1c;
+  color: #fff;
+  padding: 10px;
+  border: none;
+  outline: none;
+}
+select {
+  outline: none;
+}
+
+/* global */
+
+.center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.hidden {
+  display: none;
+}
+
+/* index */
+
+.header {
+  text-align: center;
+}
+.header img {
+  display: inline;
+  width: 50px;
+  vertical-align: middle;
+}
+.header span {
+  font-size: 50px;
+  vertical-align: middle;
+  color: #fff;
+}
+#error {
+  margin: 0;
+  color: #fc535e;
+  text-align: center;
+}
+
+/* settings */
+
+.loading * {
+  display: inline;
+  vertical-align: middle;
+  color: #fff;
+  font-size: 20px;
+}
+.settings-left {
+  position: absolute;
+  top: 0; left: 0;
+  padding: 20px;
+  background-color: #1c1c1c;
+  width: 220px;
+  height: calc(100vh - 40px);
+}
+.settings-left img {
+  width: 220px;
+}
+#settings-title {
+  width: 220px;
+  word-break: break-all;
+  font-weight: bold;
+}
+.settings-right {
+  position: absolute;
+  top: 0; right: 0;
+  padding: 20px;
+  width: calc(100vw - 300px);
+  height: calc(100vh - 40px);
+}
+.settings-download {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+}
+#chosen {
+  word-break: break-all;
+  font-family: monospace;
+}
+#formats {
+  margin: 0px 0px 15px 0px;
+  background-color: #1c1c1c;
+  color: #fff;
+  padding: 10px;
+}
+
+/* download */
+.video-left {
+  width: 220px;
+  display: inline-block;
+  vertical-align: text-top;
+  position: absolute;
+  left: 20px;
+}
+.video-right {
+  display: inline-block;
+  vertical-align: text-top;
+  width: calc(100vw - 280px);
+  position: absolute;
+  right: 20px;
+}
+.video-right * {
+  display: block;
+}
+#video-title {
+  font-size: 24px;
+  font-weight: bold;
+}
+#video-info {
+  margin-bottom: 7px;
+}
+.bottom {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  width: calc(100vw - 40px);
+}
+#overall-progress {
+  position: absolute;
+  top: 5px;
+}
+#cancelbtn {
+  float: right;
+}
+.done {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+.done-big {
+  font-size: 200px;
+}
+.done span {
+  font-size: 24px;
+  display: block;
+}

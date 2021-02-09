@@ -1,0 +1,32 @@
+{
+  "name": "ZenLoad",
+  "version": "1.0.0",
+  "description": "ZenLoad",
+  "main": "index.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "keywords": [],
+  "author": "risbun",
+  "license": "Unlicense",
+  "devDependencies": {
+    "electron": "^11.2.3",
+    "electron-builder": "^22.9.1"
+  },
+  "dependencies": {
+    "ffmpeg-static": "^4.2.7",
+    "fluent-ffmpeg": "^2.1.2",
+    "node-fetch": "^2.6.1",
+    "progressbar.js": "^1.1.0",
+    "ytdl-core": "^4.4.5",
+    "ytpl": "^2.0.5"
+  },
+  "build": {
+    "appId": "com.github.risbun.ZenLoad",
+    "win": {
+      "target": "portable"
+    }
+  }
+}

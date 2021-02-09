@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>ZenLoad</title>
+    <link href="style.css" rel="stylesheet">
+    <script type="text/javascript" src="scripts/settings.js"></script>
+  </head>
+  <body>
+    <div class="loading center">
+      <svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0" width="48px" height="48px" fill="#fff" viewBox="0 0 128 128" xml:space="preserve"><g><circle cx="16" cy="64" r="16"/><circle cx="16" cy="64" r="14.344" transform="rotate(45 64 64)"/><circle cx="16" cy="64" r="12.531" transform="rotate(90 64 64)"/><circle cx="16" cy="64" r="10.75" transform="rotate(135 64 64)"/><circle cx="16" cy="64" r="10.063" transform="rotate(180 64 64)"/><circle cx="16" cy="64" r="8.063" transform="rotate(225 64 64)"/><circle cx="16" cy="64" r="6.438" transform="rotate(270 64 64)"/><circle cx="16" cy="64" r="5.375" transform="rotate(315 64 64)"/><animateTransform attributeName="transform" type="rotate" values="0 64 64;315 64 64;270 64 64;225 64 64;180 64 64;135 64 64;90 64 64;45 64 64" calcMode="discrete" dur="1s" repeatCount="indefinite"/></g></svg>
+      <span>Downloading playlist...</span>
+    </div>
+    <div class="settings hidden">
+      <div class="settings-left">
+        <img id="settings-img">
+        <p id="settings-title"></p>
+        <p id="settings-info"></p>
+      </div>
+      <div class="settings-right">
+        <div>
+          <span>Maximum resolution:</span>
+          <select id="res">
+            <option>4320p</option>
+            <option>2160p</option>
+            <option>1440p</option>
+            <option>1080p</option>
+            <option>720p</option>
+            <option>480p</option>
+            <option>360p</option>
+            <option>240p</option>
+            <option>144p</option>
+          </select>
+        </div>
+        <div>
+          <span>Format:</span>
+          <select id="format">
+            <option>WebM</option>
+            <option>MP4</option>
+          </select>
+        </div>
+        <pre id="formats">Video: VP9
+Audio: Opus 160kb/s</pre>
+        <div>
+          <span>Save thumbnails:</span>
+          <input id="thumbs" type="checkbox" checked>
+        </div>
+        <div>
+          <span>Save videodata:</span>
+          <input id="videodata" type="checkbox" checked>
+        </div>
+        <div>
+          <span>Seperate description:</span>
+          <input id="seperate" type="checkbox">
+        </div>
+        <br>
+        <div>
+          <input id="continue" type="number" placeholder="Continue from index">
+        </div>
+        <br>
+        <div>
+          <button id="choose">Choose folder</button>
+          <span id="chosen"></span>
+        </div>
+      </div>
+      <div class="settings-download">
+        <button id="download">Download</button>
+      </div>
+    </div>
+  </body>
+</html>
