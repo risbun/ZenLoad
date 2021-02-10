@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <title>ZenLoad</title>
     <link href="style.css" rel="stylesheet">
+    <link href="https://kit-free.fontawesome.com/releases/latest/css/free.min.css" rel="stylesheet">
     <script type="text/javascript" src="scripts/settings.js"></script>
   </head>
   <body>
@@ -16,6 +17,8 @@
         <img id="settings-img">
         <p id="settings-title"></p>
         <p id="settings-info"></p>
+        <hr>
+        <div class="settings-vids"></div>
       </div>
       <div class="settings-right">
         <div>
@@ -59,12 +62,13 @@ Audio: Opus 160kb/s</pre>
         </div>
         <br>
         <div>
-          <button id="choose">Choose folder</button>
+          <button id="choose"><i class="fas fa-search"></i> Choose folder</button>
           <span id="chosen"></span>
         </div>
       </div>
       <div class="settings-download">
-        <button id="download">Download</button>
+        <button id="backbtn"><i class="fas fa-arrow-left"></i> Back</button>
+        <button id="download"><i class="fas fa-download"></i> Download</button>
       </div>
     </div>
   </body>

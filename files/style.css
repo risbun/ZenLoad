@@ -3,6 +3,7 @@ body {
   background: #2c2c2c;
   font-family: "Comic Sans MS", sans-serif;
   color: #fff;
+  overflow: hidden;
 }
 button {
   cursor: pointer;
@@ -19,7 +20,7 @@ button:hover {
 p {
   margin: 0;
 }
-input[type="text"] {
+input[type="text"], input[type="number"] {
   background: #1c1c1c;
   color: #fff;
   padding: 10px;
@@ -78,6 +79,20 @@ select {
   background-color: #1c1c1c;
   width: 220px;
   height: calc(100vh - 40px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.settings-left::-webkit-scrollbar {
+  width: 10px;
+}
+.settings-left::-webkit-scrollbar-track {
+  background: #3c3c3c;
+}
+.settings-left::-webkit-scrollbar-thumb {
+  background: #888;
+}
+.settings-left::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 .settings-left img {
   width: 220px;
@@ -109,30 +124,51 @@ select {
   color: #fff;
   padding: 10px;
 }
+.settings-vid {
+  position: relative;
+  padding: 10px;
+  cursor: pointer;
+}
+.settings-vid:nth-child(even) {
+  background: #2c2c2c;
+}
+.settings-vid p {
+  max-width: 170px;
+  word-break: break-all;
+}
+.settings-vid i {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  width: 20px;
+  color: #fff;
+  transform: translateY(-50%);
+}
 
 /* download */
+.video {
+  position: relative;
+  margin-bottom: 20px;
+}
 .video-left {
   width: 220px;
   display: inline-block;
   vertical-align: text-top;
-  position: absolute;
-  left: 20px;
 }
 .video-right {
   display: inline-block;
   vertical-align: text-top;
   width: calc(100vw - 280px);
-  position: absolute;
-  right: 20px;
+  float: right;
 }
 .video-right * {
   display: block;
 }
-#video-title {
+.video-title {
   font-size: 24px;
   font-weight: bold;
 }
-#video-info {
+.video-info {
   margin-bottom: 7px;
 }
 .bottom {
@@ -161,4 +197,10 @@ select {
 .done span {
   font-size: 24px;
   display: block;
+}
+#videoTwo img, #videoThree img {
+  filter: grayscale(100%);
+}
+#videoTwo span, #videoThree span {
+  color: #afafaf;
 }

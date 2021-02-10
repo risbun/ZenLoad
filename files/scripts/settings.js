@@ -2,14 +2,29 @@ const { ipcRenderer } = require('electron');
 const path = require('path');
 const ytpl = require('ytpl');
 const fs = require('fs');
+const os = require('os');
 
-let outputPath = path.join(__dirname, 'videos');
+let outputPath = path.join(os.homedir(), 'Videos', 'ZenLoad');
+let ignoredVids = [];
+
+const clickVid = (e) => {
+  if (e.path[0].tagName != 'DIV') var elem = e.path[1];
+  else var elem = e.path[0];
+  var index = ignoredVids.indexOf(elem.dataset.index);
+  if (index > -1) {
+    ignoredVids.splice(index, 1);
+    elem.querySelector('i').className = 'fas fa-check-square';
+  } else {
+    ignoredVids.push(elem.dataset.index);
+    elem.querySelector('i').className = 'far fa-square';
+  }
+}
 
 const extractIDs = (items) => {
   return new Promise((res, rej) => {
     var arr = [], last;
     items.forEach((item, i) => {
-      if (item.isPlayable) arr.push(item.id);
+      if (item.isPlayable && !ignoredVids.includes(i.toString())) arr.push(item.id);
       if (i == items.length - 1) res(arr);
     });
   });
@@ -41,6 +56,16 @@ window.addEventListener('load', async () => {
   document.querySelector('#settings-info').innerText = `${pl.estimatedItemCount} Videos | ${pl.views} Views`;
   document.querySelector('#chosen').innerText = outputPath;
 
+  var parent = document.querySelector('.settings-vids');
+  pl.items.forEach((item, i) => {
+    var elem = document.createElement('div');
+    elem.className = 'settings-vid';
+    elem.innerHTML = `<p>${item.title}</p><i class="fas fa-check-square"></i>`;
+    elem.dataset.index = i;
+    elem.addEventListener('click', clickVid);
+    parent.appendChild(elem);
+  });
+
   document.querySelector('.loading').classList.toggle('hidden', true);
   document.querySelector('.settings').classList.toggle('hidden', false);
 
@@ -48,7 +73,7 @@ window.addEventListener('load', async () => {
   var formats = document.querySelector('#formats');
   formatSelect.addEventListener('change', () => {
     if (formatSelect.value == 'WebM') formats.innerHTML = 'Video: VP9\nAudio: Opus 160kb/s';
-    else formats.innerHTML = 'Video: H264\nAudio: AAC 128kb/s';
+    else formats.innerHTML = 'Video: H264\nAudio: AAC ~320kb/s';
   });
 
   var videodata = document.querySelector('#videodata');
@@ -66,12 +91,19 @@ window.addEventListener('load', async () => {
     ipcRenderer.send('directory');
   });
 
+  var backbtn = document.querySelector('#backbtn');
+  backbtn.addEventListener('click', () => {
+    ipcRenderer.send('window', 'files/start.html');
+  });
+
   var downloadBtn = document.querySelector('#download');
   var continueNum = document.querySelector('#continue');
   downloadBtn.addEventListener('click', async () => {
     if (continueNum.value < 0) return alert('Continue number can\'t be negative.');
     if (continueNum.value && continueNum.value > pl.items.length) return alert('Continue number can\'t be bigger than length silly.');
+    if (ignoredVids.length >= pl.items.length) return alert('You can\'t just download 0 videos.');
     var arr = await extractIDs(pl.items);
+    console.log(arr);
     localStorage.setItem('playlist', JSON.stringify(arr));
     localStorage.setItem('options', JSON.stringify({
       thumb: document.querySelector('#thumbs').checked,

@@ -1,6 +1,5 @@
 const { ipcRenderer } = require('electron');
 const ProgressBar = require('progressbar.js');
-const ffpath = require('ffmpeg-static');
 const ffmpeg = require('fluent-ffmpeg');
 const fetch = require('node-fetch');
 const ytdl = require('ytdl-core');
@@ -9,14 +8,16 @@ const fs = require('fs');
 
 // constants
 const REGEX = /[\\\/\:\*\?\"\<\>\|]/g;
+const FFMPEG_PATH = path.join(process.cwd(), 'files', 'ffmpeg', 'ffmpeg.exe').replace('app.asar', 'app.asar.unpacked');
+const FFPROBE_PATH = path.join(process.cwd(), 'files', 'ffmpeg', 'ffprobe.exe').replace('app.asar', 'app.asar.unpacked');
 
 // global
-let bar, videoInfo, opts, currentStream;
+let bar, videoInfo, opts, currentStream, child;
 
 // failed
 const failed = (msg) => {
   document.querySelector('.bottom').classList.toggle('hidden', true);
-  document.querySelector('.video').classList.toggle('hidden', true);
+  document.querySelector('.videos').classList.toggle('hidden', true);
 
   document.querySelector('.done-big').className = 'fas fa-times-circle done-big';
   document.querySelector('.done span').innerText = msg;
@@ -46,7 +47,7 @@ const getVideoFormat = (info) => {
 const getAudioFormat = (info) => {
   return new Promise((res, rej) => {
     var formats = ytdl.filterFormats(info.formats, 'audioonly');
-    var correct = formats.find(item => item.mimeType.includes(opts.format.toLowerCase()));
+    var correct = formats.find(item => item.mimeType.includes('webm'));
     res(correct);
   });
 }
@@ -71,11 +72,12 @@ const downloadThumbs = (info, videoPath) => {
 // download video
 const downloadVideo = (info, videoPath) => {
   return new Promise(async (res, rej) => {
-    currentStream = fs.createWriteStream(path.join(videoPath, 'video.ytdl'));
+    currentStream = fs.createWriteStream(path.join(videoPath, `video.ytdl`));
     currentStream.on('finish', () => res());
     var format = await getVideoFormat(info);
     var inst = ytdl.downloadFromInfo(info, { format });
     inst.on('error', (e) => {
+      console.log(e);
       if (e.message == 'Status code: 404') failed('Could not get video: 404 Not Found');
       else if (e.message == 'Status code: 403' || e.message == 'Status code: 401') failed('Could not get video: 403 Forbidden or 401 Unathorized');
       else failed(`Unknown error occured: ${e.message}`);
@@ -92,7 +94,7 @@ const downloadVideo = (info, videoPath) => {
 // download audio
 const downloadAudio = (info, videoPath) => {
   return new Promise(async (res, rej) => {
-    currentStream = fs.createWriteStream(path.join(videoPath, 'audio.ytdl'));
+    currentStream = fs.createWriteStream(path.join(videoPath, `audio.ytdl`));
     currentStream.on('finish', () => res());
     var format = await getAudioFormat(info);
     var inst = ytdl.downloadFromInfo(info, { format });
@@ -110,35 +112,72 @@ const downloadAudio = (info, videoPath) => {
   });
 }
 
+// re encode
+const reEncode = (videoPath, title) => {
+  return new Promise((res, rej) => {
+    child = ffmpeg()
+      .input(path.join(videoPath, `video.ytdl`))
+      .input(path.join(videoPath, `audio.ytdl`))
+      .videoCodec('libx264')
+      .audioCodec('aac')
+      .audioBitrate('320k')
+      .on('progress', (prog) => {
+        videoInfo.innerText = `Joining audio and video (${(isNaN(prog.percent) ? 0 : Math.round(prog.percent))}%)`;
+        bar.animate(prog.percent / 100);
+      })
+      .on('end', () => {
+        setTimeout(() => {
+          fs.unlinkSync(path.join(videoPath, `audio.ytdl`));
+          fs.unlinkSync(path.join(videoPath, `video.ytdl`));
+          child = null;
+          res();
+        }, 2000);
+      })
+      .save(path.join(videoPath, `${title}.mp4`));
+  });
+}
+
 // join files
 const joinFiles = (videoPath, title) => {
   return new Promise((res, rej) => {
-    ffmpeg()
-      .input(path.join(videoPath, 'video.ytdl'))
-      .input(path.join(videoPath, 'audio.ytdl'))
-      .audioCodec('copy')
+    var cmd = ffmpeg()
+      .input(path.join(videoPath, `video.ytdl`))
+      .input(path.join(videoPath, `audio.ytdl`))
       .videoCodec('copy')
       .on('progress', (prog) => {
         videoInfo.innerText = `Joining audio and video (${(isNaN(prog.percent) ? 0 : Math.round(prog.percent))}%)`;
         bar.animate(prog.percent / 100);
       })
-      .on('end', () => res())
-      .save(path.join(videoPath, `${title}.${opts.format.toLowerCase()}`));
+      .on('error', (err, stdout, stderr) => {
+        videoInfo.innerText = 'Failed to join audio and video, probably due to bad packets. Reencoding video...';
+        if (fs.existsSync(path.join(videoPath, `${title}.${opts.format.toLowerCase()}`))) fs.unlinkSync(path.join(videoPath, `${title}.${opts.format.toLowerCase()}`));
+        setTimeout(() => rej(), 3000);
+      })
+      .on('end', () => {
+        setTimeout(() => {
+          fs.unlinkSync(path.join(videoPath, `audio.ytdl`));
+          fs.unlinkSync(path.join(videoPath, `video.ytdl`));
+          res();
+        }, 2000);
+      });
+    if (opts.format == 'MP4') cmd.audioCodec('aac').audioBitrate('320k');
+    cmd.save(path.join(videoPath, `${title}.${opts.format.toLowerCase()}`));
   });
 }
 
 window.addEventListener('load', async () => {
-  ffmpeg.setFfmpegPath(ffpath.replace('app.asar', 'app.asar.unpacked')); // set path to ffmpeg-static
+  ffmpeg.setFfmpegPath(FFMPEG_PATH); // set path to static ffmpeg binary
+  ffmpeg.setFfprobePath(FFPROBE_PATH);
 
   opts = JSON.parse(localStorage.getItem('options'));
   var arr = JSON.parse(localStorage.getItem('playlist'));
 
   var overallProgress = document.querySelector('#overall-progress');
-  var videoTitle = document.querySelector('#video-title');
+  var videoTitle = document.querySelector('.video-title');
   var videoThumb = document.querySelector('.video-left');
-  videoInfo = document.querySelector('#video-info');
+  videoInfo = document.querySelector('.video-info');
 
-  bar = new ProgressBar.Line('#video-loader', {
+  bar = new ProgressBar.Line('.video-loader', {
     strokeWidth: 2,
     easing: 'linear',
     duration: 100,
@@ -162,11 +201,12 @@ window.addEventListener('load', async () => {
   cancelbtn.addEventListener('click', () => {
     if (confirm('Are you sure you want to cancel the download?')) {
       if (currentStream) currentStream.destroy();
+      if (child) child.kill();
       ipcRenderer.send('window', 'files/start.html');
     }
   });
 
-  var i = opts.continueNum;
+  var i = (Number(opts.continueNum) == 0 ? 0 : Number(opts.continueNum) - 1);
   while (arr.length != i) {
     overallProgress.innerText = `Download progress: ${i + 1} / ${arr.length}`;
 
@@ -231,15 +271,18 @@ window.addEventListener('load', async () => {
     bar.set(0);
     currentStream = null;
     videoInfo.innerText = 'Preparing ffmpeg...';
-    await joinFiles(videoPath, title.replace(REGEX, '_'));
+    try {
+      await joinFiles(videoPath, title.replace(REGEX, '_'));
+    } catch (e) {
+      bar.set(0);
+      await reEncode(videoPath, title.replace(REGEX, '_'));
+    }
     bar.set(0);
-    fs.unlinkSync(path.join(videoPath, 'audio.ytdl'));
-    fs.unlinkSync(path.join(videoPath, 'video.ytdl'));
 
     i++;
   }
 
   document.querySelector('.bottom').classList.toggle('hidden', true);
-  document.querySelector('.video').classList.toggle('hidden', true);
+  document.querySelector('.videos').classList.toggle('hidden', true);
   document.querySelector('.done').classList.toggle('hidden', false);
 });
