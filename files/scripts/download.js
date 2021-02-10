@@ -8,8 +8,8 @@ const fs = require('fs');
 
 // constants
 const REGEX = /[\\\/\:\*\?\"\<\>\|]/g;
-const FFMPEG_PATH = path.join(process.cwd(), 'files', 'ffmpeg', 'ffmpeg.exe').replace('app.asar', 'app.asar.unpacked');
-const FFPROBE_PATH = path.join(process.cwd(), 'files', 'ffmpeg', 'ffprobe.exe').replace('app.asar', 'app.asar.unpacked');
+const FFMPEG_PATH = path.join(__dirname, 'ffmpeg', 'ffmpeg.exe').replace('app.asar', 'app.asar.unpacked');
+const FFPROBE_PATH = path.join(__dirname, 'ffmpeg', 'ffprobe.exe').replace('app.asar', 'app.asar.unpacked');
 
 // global
 let bar, videoInfo, opts, currentStream, child;
