@@ -7,6 +7,7 @@ const createWindow = () => {
     width: 800,
     height: 600,
     autoHideMenuBar: true,
+    icon: 'files/glot.png',
     webPreferences: {
       nodeIntegration: true
     }
