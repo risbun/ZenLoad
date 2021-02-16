@@ -2,33 +2,40 @@
 <html lang="en" dir="ltr">
   <head>
     <meta charset="utf-8">
-    <title>ZenLoad</title>
     <link href="style.css" rel="stylesheet">
     <link href="https://kit-free.fontawesome.com/releases/latest/css/free.min.css" rel="stylesheet">
     <script type="text/javascript" src="scripts/download.js"></script>
   </head>
-  <body style="margin: 20px;">
-    <div class="videos">
-      <div class="video" id="videoOne">
-        <img class="video-left">
-        <div class="video-right">
-          <span class="video-title"></span>
-          <span class="video-info"></span>
-          <div class="video-loader"></div>
-        </div>
+  <body class="default-margin">
+    <div class="video">
+      <img class="video-thumbnail" id="videoThumb">
+      <div class="video-info">
+        <span class="video-title" id="videoTitle"></span>
+        <span class="video-task" id="videoTask"></span>
+        <div class="video-loading" id="videoLoading"></div>
       </div>
     </div>
-    <div class="bottom">
-      <span id="overall-progress">Download progress:</span>
-      <button id="cancelbtn">Cancel</btn>
+    <div class="queue">
+      <img class="video-thumbnail" id="queueThumb">
+      <div class="video-info">
+        <span class="video-title" id="queueTitle"></span>
+        <span class="video-task" id="queueTask">Queued</span>
+        <div class="video-loading" id="queueLoading"></div>
+      </div>
     </div>
-    <div class="done hidden">
-      <i class="fas fa-check done-big"></i>
+    <div class="video-bottom">
+      <span id="videoProgress">Download progress:</span>
+      <button id="videoCancel">Cancel</button>
+    </div>
+    <div class="video-done hidden">
+      <i class="fas fa-check video-done-icon"></i>
       <span>Done!</span>
       <br>
       <div>
-        <button id="homebtn"><i class="fas fa-home"></i> Home</button>
-        <button id="exitbtn"><i class="fas fa-sign-out-alt"></i> Exit</button>
+        <button id="videoHome"><i class="fas fa-home"></i> Home</button>
+        <button id="videoExit"><i class="fas fa-sign-out-alt"></i> Exit</button>
+        <br>
+        <button id="videoOpenFolder"><i class="fas fa-folder-open"></i> Open Folder</button>
       </div>
     </div>
   </body>

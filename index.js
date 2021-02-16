@@ -6,6 +6,8 @@ const createWindow = () => {
   mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
+    backgroundColor: '#2c2c2c',
+    title: 'ZenLoad',
     autoHideMenuBar: true,
     webPreferences: {
       nodeIntegration: true

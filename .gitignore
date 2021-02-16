@@ -103,5 +103,5 @@ dist
 # TernJS port file
 .tern-port
 
-# exclude ffmpeg folder
-files/ffmpeg
+# exclude libs folder
+files/libs

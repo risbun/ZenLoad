@@ -1,13 +1,13 @@
 {
   "name": "ZenLoad",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "ZenLoad",
   "main": "index.js",
   "scripts": {
     "start": "electron .",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
-    "ffmpeg": "node ffmpeg.js"
+    "libs": "node libs.js"
   },
   "keywords": [],
   "author": "risbun",
@@ -18,10 +18,9 @@
     "electron-builder": "^22.9.1"
   },
   "dependencies": {
-    "fluent-ffmpeg": "^2.1.2",
-    "node-fetch": "^2.6.1",
+    "phin": "^3.5.1",
     "progressbar.js": "^1.1.0",
-    "ytdl-core": "^4.4.5",
+    "youtube-dl-wrap": "^2.0.0",
     "ytpl": "^2.0.5"
   },
   "build": {
@@ -31,7 +30,7 @@
       "icon": "files/icon.ico"
     },
     "asarUnpack": [
-      "files/ffmpeg/"
+      "files/libs/"
     ]
   }
 }

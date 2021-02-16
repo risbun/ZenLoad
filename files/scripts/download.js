@@ -1,68 +1,56 @@
-const { ipcRenderer } = require('electron');
+const { ipcRenderer, shell } = require('electron');
 const ProgressBar = require('progressbar.js');
-const ffmpeg = require('fluent-ffmpeg');
-const fetch = require('node-fetch');
-const ytdl = require('ytdl-core');
+const cp = require('child_process');
+const youtubedl = require('youtube-dl-wrap');
+const phin = require('phin');
 const path = require('path');
 const fs = require('fs');
 
 // constants
 const REGEX = /[\\\/\:\*\?\"\<\>\|]/g;
-const FFMPEG_PATH = path.join(__dirname, 'ffmpeg', 'ffmpeg.exe').replace('app.asar', 'app.asar.unpacked');
-const FFPROBE_PATH = path.join(__dirname, 'ffmpeg', 'ffprobe.exe').replace('app.asar', 'app.asar.unpacked');
+const PROGRESSBAR_OPTS = {
+  strokeWidth: 2,
+  easing: 'linear',
+  duration: 100,
+  color: '#fff',
+  trailColor: '#1c1c1c',
+  trailWidth: 2,
+  svgStyle: {width: '100%', height: '100%'}
+};
+const FFMPEG_PATH = path.join(__dirname, 'libs', 'ffmpeg.exe').replace('app.asar', 'app.asar.unpacked');
+const YOTUBEDL_PATH = path.join(__dirname, 'libs', 'youtube-dl.exe').replace('app.asar', 'app.asar.unpacked');
+const DEFAULT_OPTIONS = ['--no-color', '--no-cache-dir', '--newline', '--ffmpeg-location', FFMPEG_PATH];
 
 // global
-let bar, videoInfo, opts, currentStream, child;
+let opts, videoElems, queueElems, current;
+const ytdl = new youtubedl(YOTUBEDL_PATH);
 
 // failed
 const failed = (msg) => {
-  document.querySelector('.bottom').classList.toggle('hidden', true);
-  document.querySelector('.videos').classList.toggle('hidden', true);
+  document.querySelector('.video-bottom').classList.toggle('hidden', true);
+  document.querySelector('.video').classList.toggle('hidden', true);
+  document.querySelector('.queue').classList.toggle('hidden', true);
 
-  document.querySelector('.done-big').className = 'fas fa-times-circle done-big';
-  document.querySelector('.done span').innerText = msg;
+  document.querySelector('.video-done-icon').className = 'fas fa-times-circle done-big';
+  document.querySelector('.video-done span').innerText = msg;
 
-  document.querySelector('.done').classList.toggle('hidden', false);
-}
-
-// get video format
-const getVideoFormat = (info) => {
-  return new Promise((res, rej) => {
-    var formats = ytdl.filterFormats(info.formats, 'videoonly');
-    var corrects = formats.filter(item => item.mimeType.includes(opts.format.toLowerCase()));
-    var tryFind = corrects.find(item => item.qualityLabel.includes(opts.res));
-    if (tryFind) res(tryFind);
-    else {
-      var sorted = corrects.sort((i1, i2) => {
-        if (Number(i1.qualityLabel.split('p')[0]) < Number(i2.qualityLabel.split('p')[0])) return 1;
-        else if (Number(i1.qualityLabel.split('p')[0]) > Number(i2.qualityLabel.split('p')[0])) return -1;
-        else return 0;
-      });
-      res(sorted[0]);
-    }
-  });
-}
-
-// get audio format
-const getAudioFormat = (info) => {
-  return new Promise((res, rej) => {
-    var formats = ytdl.filterFormats(info.formats, 'audioonly');
-    var correct = formats.find(item => item.mimeType.includes('webm'));
-    res(correct);
-  });
+  document.querySelector('.video-done').classList.toggle('hidden', false);
+  if (current) current.kill();
 }
 
 // download thumbs
-const downloadThumbs = (info, videoPath) => {
+const downloadThumbs = (thumbs, videoPath) => {
   return new Promise(async (res, rej) => {
     fs.mkdirSync(path.join(videoPath, 'thumbnails'), { recursive: true });
-    var thumbs = info.videoDetails.thumbnails, i = 0;
+    var i = 0;
     while (i < thumbs.length) {
-      var filename = path.basename(thumbs[i].url.split('?')[0]), ext = path.extname(filename);
-      var output = path.join(videoPath, 'thumbnails', filename);
-      if (fs.existsSync(output)) output = path.join(videoPath, 'thumbnails', filename.replace(ext, `_${i}${ext}`));
-      var resp = await fetch(thumbs[i].url);
-      resp.body.pipe(fs.createWriteStream(output));
+      var ext = thumbs[i].url.split(/[#?]/)[0].split('.').pop().trim();
+      var output = fs.createWriteStream(path.join(videoPath, 'thumbnails', `${thumbs[i].resolution}.${ext}`));
+      var resp = await phin({
+        url: thumbs[i].url,
+        stream: true
+      });
+      resp.pipe(output);
       i++;
     }
     res();
@@ -72,191 +60,138 @@ const downloadThumbs = (info, videoPath) => {
 // download video
 const downloadVideo = (info, videoPath) => {
   return new Promise(async (res, rej) => {
-    currentStream = fs.createWriteStream(path.join(videoPath, `video.ytdl`));
-    currentStream.on('finish', () => res());
-    var format = await getVideoFormat(info);
-    var inst = ytdl.downloadFromInfo(info, { format });
-    inst.on('error', (e) => {
-      console.log(e);
-      if (e.message == 'Status code: 404') failed('Could not get video: 404 Not Found');
-      else if (e.message == 'Status code: 403' || e.message == 'Status code: 401') failed('Could not get video: 403 Forbidden or 401 Unathorized');
-      else failed(`Unknown error occured: ${e.message}`);
-    });
-    inst.on('progress', (chunk, prog, total) => {
-      var percentage = (prog * 100) / total;
-      videoInfo.innerText = `Downloading video (${Math.round(percentage)}%)`;
-      bar.animate(percentage / 100);
-    });
-    inst.pipe(currentStream);
-  });
-}
+    var af = opts.format == 'MP4' ? 'm4a' : opts.format.toLowerCase(), vh = opts.res.split('p')[0], vf = opts.format.toLowerCase();
+    var formatLine = `bestvideo[height<=?${vh}][ext=${vf}]+bestaudio[ext=${af}]/best[ext=${vf}]`;
+    var options = DEFAULT_OPTIONS.concat(['-o', path.join(videoPath, `${info.fulltitle.replace(REGEX, '_')}_${info.id}.%(ext)s`), '-f', formatLine, info.id]);
 
-// download audio
-const downloadAudio = (info, videoPath) => {
-  return new Promise(async (res, rej) => {
-    currentStream = fs.createWriteStream(path.join(videoPath, `audio.ytdl`));
-    currentStream.on('finish', () => res());
-    var format = await getAudioFormat(info);
-    var inst = ytdl.downloadFromInfo(info, { format });
-    inst.on('error', (e) => {
-      if (e.message == 'Status code: 404') failed('Could not get audio: 404 Not Found');
-      else if (e.message == 'Status code: 403' || e.message == 'Status code: 401') failed('Could not get audio: 403 Forbidden or 401 Unathorized');
-      else failed(`Unknown error occured: ${e.message}`);
-    });
-    inst.on('progress', (chunk, prog, total) => {
-      var percentage = (prog * 100) / total;
-      videoInfo.innerText = `Downloading audio (${Math.round(percentage)}%)`;
-      bar.animate(percentage / 100);
-    });
-    inst.pipe(currentStream);
-  });
-}
-
-// re encode
-const reEncode = (videoPath, title) => {
-  return new Promise((res, rej) => {
-    child = ffmpeg()
-      .input(path.join(videoPath, `video.ytdl`))
-      .input(path.join(videoPath, `audio.ytdl`))
-      .videoCodec('libx264')
-      .audioCodec('aac')
-      .audioBitrate('320k')
+    var audio = false;
+    var proc = ytdl.exec(options)
       .on('progress', (prog) => {
-        videoInfo.innerText = `Joining audio and video (${(isNaN(prog.percent) ? 0 : Math.round(prog.percent))}%)`;
-        bar.animate(prog.percent / 100);
+        if (prog.percent == 100) audio = true;
+        videoElems[2].innerText = `Downloading ${audio ? 'audio' : 'video'} (${Math.floor(prog.percent)}%, ${prog.currentSpeed}, ${prog.eta})`
+        videoElems[3].animate(prog.percent / 100);
       })
-      .on('end', () => {
-        setTimeout(() => {
-          fs.unlinkSync(path.join(videoPath, `audio.ytdl`));
-          fs.unlinkSync(path.join(videoPath, `video.ytdl`));
-          child = null;
-          res();
-        }, 2000);
+      .on('error', (error) => {
+        return failed(error);
       })
-      .save(path.join(videoPath, `${title}.mp4`));
-  });
-}
-
-// join files
-const joinFiles = (videoPath, title) => {
-  return new Promise((res, rej) => {
-    var cmd = ffmpeg()
-      .input(path.join(videoPath, `video.ytdl`))
-      .input(path.join(videoPath, `audio.ytdl`))
-      .videoCodec('copy')
-      .on('progress', (prog) => {
-        videoInfo.innerText = `Joining audio and video (${(isNaN(prog.percent) ? 0 : Math.round(prog.percent))}%)`;
-        bar.animate(prog.percent / 100);
-      })
-      .on('error', (err, stdout, stderr) => {
-        videoInfo.innerText = 'Failed to join audio and video, probably due to bad packets. Reencoding video...';
-        if (fs.existsSync(path.join(videoPath, `${title}.${opts.format.toLowerCase()}`))) fs.unlinkSync(path.join(videoPath, `${title}.${opts.format.toLowerCase()}`));
-        setTimeout(() => rej(), 3000);
-      })
-      .on('end', () => {
-        setTimeout(() => {
-          fs.unlinkSync(path.join(videoPath, `audio.ytdl`));
-          fs.unlinkSync(path.join(videoPath, `video.ytdl`));
-          res();
-        }, 2000);
+      .on('close', () => {
+        res();
+        current = null;
       });
-    if (opts.format == 'MP4') cmd.audioCodec('aac').audioBitrate('320k');
-    cmd.save(path.join(videoPath, `${title}.${opts.format.toLowerCase()}`));
+    current = proc.youtubeDlProcess;
   });
 }
 
-window.addEventListener('load', async () => {
-  ffmpeg.setFfmpegPath(FFMPEG_PATH); // set path to static ffmpeg binary
-  ffmpeg.setFfprobePath(FFPROBE_PATH);
+// get all metadata of video
+const getVideo = (id) => {
+  return new Promise((res, rej) => {
+    var options = DEFAULT_OPTIONS.concat(['-j', id]);
+    var proc = cp.execFile(YOTUBEDL_PATH, options, (err, stdout, stderr) => {
+      if (err) return failed(stderr);
+      res(JSON.parse(stdout.toString()));
+    });
+  });
+}
 
+// when loaded
+window.addEventListener('load', async () => {
+  // get saved options and playlist
   opts = JSON.parse(localStorage.getItem('options'));
   var arr = JSON.parse(localStorage.getItem('playlist'));
 
-  var overallProgress = document.querySelector('#overall-progress');
-  var videoTitle = document.querySelector('.video-title');
-  var videoThumb = document.querySelector('.video-left');
-  videoInfo = document.querySelector('.video-info');
+  // get all elements
+  videoElems = [...document.querySelectorAll('#videoThumb, #videoTitle, #videoTask')];
+  queueElems = [...document.querySelectorAll('#queueThumb, #queueTitle')];
+  var progress = document.querySelector('#videoProgress');
 
-  bar = new ProgressBar.Line('.video-loader', {
-    strokeWidth: 2,
-    easing: 'linear',
-    duration: 100,
-    color: '#fff',
-    trailColor: '#1c1c1c',
-    trailWidth: 2,
-    svgStyle: {width: '100%', height: '100%'}
-  });
+  // push loading bars
+  videoElems.push(new ProgressBar.Line('#videoLoading', PROGRESSBAR_OPTS));
 
-  var homebtn = document.querySelector('#homebtn');
-  homebtn.addEventListener('click', () => {
+  // handlers for buttons
+  document.querySelector('#videoHome').addEventListener('click', () => {
     ipcRenderer.send('window', 'files/start.html');
   });
-
-  var exitbtn = document.querySelector('#exitbtn');
-  exitbtn.addEventListener('click', () => {
+  document.querySelector('#videoExit').addEventListener('click', () => {
     ipcRenderer.send('goodbye');
   });
-
-  var cancelbtn = document.querySelector('#cancelbtn');
-  cancelbtn.addEventListener('click', () => {
+  document.querySelector('#videoOpenFolder').addEventListener('click', () => {
+    shell.openPath(opts.outputPath);
+  });
+  document.querySelector('#videoCancel').addEventListener('click', () => {
     if (confirm('Are you sure you want to cancel the download?')) {
-      if (currentStream) currentStream.destroy();
-      if (child) child.kill();
+      if (current) current.kill();
       ipcRenderer.send('window', 'files/start.html');
     }
   });
 
-  var i = (Number(opts.continueNum) == 0 ? 0 : Number(opts.continueNum) - 1);
-  while (arr.length != i) {
-    overallProgress.innerText = `Download progress: ${i + 1} / ${arr.length}`;
+  // prepare video and queue
+  var info = await getVideo(arr[0]);
+  videoElems[0].src = info.thumbnail;
+  videoElems[1].innerText = info.fulltitle;
+  if (arr.length > 1) {
+    queueInfo = await getVideo(arr[1]);
+    queueElems[0].src = queueInfo.thumbnail;
+    queueElems[1].innerText = queueInfo.fulltitle;
+  } else {
+    document.querySelector('.queue').classList.toggle('hidden', true);
+  }
+
+  // video download loop
+  var i = 0;
+  while (i < arr.length) {
+    progress.innerText = `Download progress: ${i + 1} / ${arr.length}`;
 
     // information download
-    videoInfo.innerText = 'Getting info';
-    var info = await ytdl.getInfo(arr[i]);
+    videoElems[2].innerText = 'Getting info';
+    if (i != 0) {
+      // get to da choppa
+      info = {...queueInfo};
 
-    // title and shit
-    var title = info.videoDetails.title.toString();
-    videoTitle.innerText = title;
-    videoThumb.src = info.videoDetails.thumbnails[info.videoDetails.thumbnails.length - 1].url;
-    videoInfo.innerText = 'Exporting info';
+      // title and shit
+      videoElems[1].innerText = info.fulltitle;
+      videoElems[0].src = info.thumbnail;
+
+      // get next in queue if exist
+      if (arr[i + 1]) {
+        queueInfo = await getVideo(arr[i + 1]);
+        queueElems[0].src = queueInfo.thumbnail;
+        queueElems[1].innerText = queueInfo.fulltitle;
+      } else {
+        document.querySelector('.queue').classList.toggle('hidden', true);
+      }
+    }
+    videoElems[2].innerText = 'Exporting info';
 
     // create path
-    var videoPath = path.join(opts.outputPath, `${title.replace(REGEX, '_')}_${arr[i]}`);
+    var videoPath = path.join(opts.outputPath, `${info.fulltitle.replace(REGEX, '_')}_${arr[i]}`);
+    if (fs.existsSync(videoPath)) fs.rmdirSync(videoPath, { recursive: true });
     fs.mkdirSync(videoPath, { recursive: true });
 
     // downoad thumbs if user wants
-    if (opts.thumb) await downloadThumbs(info, videoPath);
+    if (opts.thumb) await downloadThumbs(info.thumbnails, videoPath);
 
     // only save videodata to disk if user wants it
     if (opts.data) {
-      // check visibility
-      if (info.videoDetails.isPrivate) var visibility = 'private';
-      else if (info.videoDetails.isUnlisted) var visibility = 'unlisted';
-      else var visibility = 'public';
-
       // data to download
       var data = {
         id: arr[i],
-        title: title,
-        visibility: visibility,
-        uploaded: info.videoDetails.uploadDate,
-        tags: info.videoDetails.keywords,
-        views: info.videoDetails.viewCount,
-        live: info.videoDetails.isLiveContent,
-        age_restricted: info.videoDetails.age_restricted
+        title: info.fulltitle,
+        uploaded: info.upload_date,
+        tags: info.tags,
+        views: info.view_count,
+        live: info.is_live,
+        age_limit: info.age_limit,
+        categories: info.categories,
+        likes: info.like_count,
+        dislikes: info.dislike_count,
+        rating: info.average_rating
       };
-
-      // only add likes and dislikes if they exist
-      if (info.videoDetails.allowRatings) {
-        data.likes = info.videoDetails.likes;
-        data.dislikes = info.videoDetails.dislikes;
-      }
 
       // if description should be sepeate or not
       if (opts.seperate) {
-        fs.writeFileSync(path.join(videoPath, 'description.txt'), info.videoDetails.description, 'utf8');
+        fs.writeFileSync(path.join(videoPath, 'description.txt'), info.description, 'utf8');
       } else {
-        data.description = info.videoDetails.description;
+        data.description = info.description;
       }
 
       // write to disk
@@ -264,25 +199,15 @@ window.addEventListener('load', async () => {
       fs.writeFileSync(path.join(videoPath, 'data.json'), JSON.stringify(data, null, 2), 'utf8');
     }
 
-    // download everything!
+    // download it!
     await downloadVideo(info, videoPath);
-    bar.set(0);
-    await downloadAudio(info, videoPath);
-    bar.set(0);
-    currentStream = null;
-    videoInfo.innerText = 'Preparing ffmpeg...';
-    try {
-      await joinFiles(videoPath, title.replace(REGEX, '_'));
-    } catch (e) {
-      bar.set(0);
-      await reEncode(videoPath, title.replace(REGEX, '_'));
-    }
-    bar.set(0);
+    videoElems[3].set(0);
 
     i++;
   }
 
-  document.querySelector('.bottom').classList.toggle('hidden', true);
-  document.querySelector('.videos').classList.toggle('hidden', true);
-  document.querySelector('.done').classList.toggle('hidden', false);
+  document.querySelector('.video-bottom').classList.toggle('hidden', true);
+  document.querySelector('.video').classList.toggle('hidden', true);
+  document.querySelector('.queue').classList.toggle('hidden', true);
+  document.querySelector('.video-done').classList.toggle('hidden', false);
 });

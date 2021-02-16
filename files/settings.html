@@ -2,28 +2,29 @@
 <html lang="en" dir="ltr">
   <head>
     <meta charset="utf-8">
-    <title>ZenLoad</title>
     <link href="style.css" rel="stylesheet">
     <link href="https://kit-free.fontawesome.com/releases/latest/css/free.min.css" rel="stylesheet">
     <script type="text/javascript" src="scripts/settings.js"></script>
   </head>
-  <body>
-    <div class="loading center">
+  <body class="no-margin">
+    <div class="settings-loading center">
       <svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.0" width="48px" height="48px" fill="#fff" viewBox="0 0 128 128" xml:space="preserve"><g><circle cx="16" cy="64" r="16"/><circle cx="16" cy="64" r="14.344" transform="rotate(45 64 64)"/><circle cx="16" cy="64" r="12.531" transform="rotate(90 64 64)"/><circle cx="16" cy="64" r="10.75" transform="rotate(135 64 64)"/><circle cx="16" cy="64" r="10.063" transform="rotate(180 64 64)"/><circle cx="16" cy="64" r="8.063" transform="rotate(225 64 64)"/><circle cx="16" cy="64" r="6.438" transform="rotate(270 64 64)"/><circle cx="16" cy="64" r="5.375" transform="rotate(315 64 64)"/><animateTransform attributeName="transform" type="rotate" values="0 64 64;315 64 64;270 64 64;225 64 64;180 64 64;135 64 64;90 64 64;45 64 64" calcMode="discrete" dur="1s" repeatCount="indefinite"/></g></svg>
       <span>Downloading playlist...</span>
     </div>
     <div class="settings hidden">
       <div class="settings-left">
-        <img id="settings-img">
-        <p id="settings-title"></p>
-        <p id="settings-info"></p>
+        <img id="settingsImg">
+        <p id="settingsTitle"></p>
+        <p id="settingsInfo"></p>
         <hr>
+        <button id="settingsToggle">Toggle all</button>
         <div class="settings-vids"></div>
       </div>
       <div class="settings-right">
+        <b>Video options</b>
         <div>
           <span>Maximum resolution:</span>
-          <select id="res">
+          <select id="settingsRes">
             <option>4320p</option>
             <option>2160p</option>
             <option>1440p</option>
@@ -37,38 +38,38 @@
         </div>
         <div>
           <span>Format:</span>
-          <select id="format">
+          <select id="settingsFormat">
             <option>WebM</option>
             <option>MP4</option>
           </select>
         </div>
-        <pre id="formats">Video: VP9
-Audio: Opus 160kb/s</pre>
+        <br>
+        <b>Output options</b>
         <div>
           <span>Save thumbnails:</span>
-          <input id="thumbs" type="checkbox" checked>
+          <i id="settingsThumbs" class="fas fa-check-square"></i>
         </div>
         <div>
           <span>Save videodata:</span>
-          <input id="videodata" type="checkbox" checked>
+          <i id="settingsVideodata" class="fas fa-check-square"></i>
         </div>
         <div>
           <span>Seperate description:</span>
-          <input id="seperate" type="checkbox">
+          <i id="settingsSeperate" class="far fa-square"></i>
         </div>
         <br>
         <div>
-          <input id="continue" type="number" placeholder="Continue from index">
+          <button id="settingsChoose"><i class="fas fa-folder-open"></i> Choose folder</button>
+          <span id="settingsChosen"></span>
         </div>
         <br>
         <div>
-          <button id="choose"><i class="fas fa-search"></i> Choose folder</button>
-          <span id="chosen"></span>
+          <input id="settingsContinue" type="number" placeholder="Continue from index">
         </div>
       </div>
       <div class="settings-download">
-        <button id="backbtn"><i class="fas fa-arrow-left"></i> Back</button>
-        <button id="download"><i class="fas fa-download"></i> Download</button>
+        <button id="settingsBack"><i class="fas fa-arrow-left"></i> Back</button>
+        <button id="settingsDownload"><i class="fas fa-download"></i> Download</button>
       </div>
     </div>
   </body>
