@@ -35,4 +35,4 @@ Or you can just test it out
 * [node-fetch](https://github.com/bitinn/node-fetch)
 * [progressbar.js](https://kimmobrunfeldt.github.io/progressbar.js/)
 * [youtube-dl-wrap](https://github.com/ghjbnm/youtube-dl-wrap)
-* [youtube-dl-wrap](https://github.com/TimeForANinja/node-ytpl)
+* [ytpl](https://github.com/TimeForANinja/node-ytpl)
