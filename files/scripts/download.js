@@ -1,8 +1,9 @@
+// modules
 const { ipcRenderer, shell } = require('electron');
 const ProgressBar = require('progressbar.js');
 const cp = require('child_process');
 const youtubedl = require('youtube-dl-wrap');
-const phin = require('phin');
+const fetch = require('node-fetch');
 const path = require('path');
 const fs = require('fs');
 
@@ -19,20 +20,19 @@ const PROGRESSBAR_OPTS = {
 };
 const FFMPEG_PATH = path.join(__dirname, 'libs', 'ffmpeg.exe').replace('app.asar', 'app.asar.unpacked');
 const YOTUBEDL_PATH = path.join(__dirname, 'libs', 'youtube-dl.exe').replace('app.asar', 'app.asar.unpacked');
-const DEFAULT_OPTIONS = ['--no-color', '--no-cache-dir', '--newline', '--ffmpeg-location', FFMPEG_PATH];
+const DEFAULT_OPTIONS = ['--no-cache-dir', '--ffmpeg-location', FFMPEG_PATH];
 
 // global
 let opts, videoElems, queueElems, current;
-const ytdl = new youtubedl(YOTUBEDL_PATH);
 
 // failed
-const failed = (msg) => {
+const failed = (msg, index) => {
   document.querySelector('.video-bottom').classList.toggle('hidden', true);
   document.querySelector('.video').classList.toggle('hidden', true);
   document.querySelector('.queue').classList.toggle('hidden', true);
 
-  document.querySelector('.video-done-icon').className = 'fas fa-times-circle done-big';
-  document.querySelector('.video-done span').innerText = msg;
+  document.querySelector('.video-done-icon').className = 'fas fa-times-circle video-done-icon';
+  document.querySelector('.video-done span').innerText = `${msg}\n${index}`;
 
   document.querySelector('.video-done').classList.toggle('hidden', false);
   if (current) current.kill();
@@ -45,12 +45,8 @@ const downloadThumbs = (thumbs, videoPath) => {
     var i = 0;
     while (i < thumbs.length) {
       var ext = thumbs[i].url.split(/[#?]/)[0].split('.').pop().trim();
-      var output = fs.createWriteStream(path.join(videoPath, 'thumbnails', `${thumbs[i].resolution}.${ext}`));
-      var resp = await phin({
-        url: thumbs[i].url,
-        stream: true
-      });
-      resp.pipe(output);
+      var resp = await fetch(thumbs[i].url);
+      resp.body.pipe(fs.createWriteStream(path.join(videoPath, 'thumbnails', `${thumbs[i].resolution}.${ext}`)));
       i++;
     }
     res();
@@ -58,13 +54,13 @@ const downloadThumbs = (thumbs, videoPath) => {
 }
 
 // download video
-const downloadVideo = (info, videoPath) => {
+const downloadVideo = (i, info, videoPath) => {
   return new Promise(async (res, rej) => {
     var af = opts.format == 'MP4' ? 'm4a' : opts.format.toLowerCase(), vh = opts.res.split('p')[0], vf = opts.format.toLowerCase();
     var formatLine = `bestvideo[height<=?${vh}][ext=${vf}]+bestaudio[ext=${af}]/best[ext=${vf}]`;
-    var options = DEFAULT_OPTIONS.concat(['-o', path.join(videoPath, `${info.fulltitle.replace(REGEX, '_')}_${info.id}.%(ext)s`), '-f', formatLine, info.id]);
+    var options = DEFAULT_OPTIONS.concat(['-o', path.join(videoPath, `${info.fulltitle.replace(REGEX, '_')}_${info.id}.%(ext)s`), '-f', formatLine, `https://youtu.be/${info.id}`]);
 
-    var audio = false;
+    var audio = false, ytdl = new youtubedl(YOTUBEDL_PATH);
     var proc = ytdl.exec(options)
       .on('progress', (prog) => {
         if (prog.percent == 100) audio = true;
@@ -72,22 +68,22 @@ const downloadVideo = (info, videoPath) => {
         videoElems[3].animate(prog.percent / 100);
       })
       .on('error', (error) => {
-        return failed(error);
+        return failed(error, i);
       })
       .on('close', () => {
-        res();
         current = null;
+        res();
       });
     current = proc.youtubeDlProcess;
   });
 }
 
 // get all metadata of video
-const getVideo = (id) => {
+const getVideo = (i, id) => {
   return new Promise((res, rej) => {
-    var options = DEFAULT_OPTIONS.concat(['-j', id]);
+    var options = DEFAULT_OPTIONS.concat(['-j', `https://youtu.be/${id}`]);
     var proc = cp.execFile(YOTUBEDL_PATH, options, (err, stdout, stderr) => {
-      if (err) return failed(stderr);
+      if (err) return failed(stderr, i);
       res(JSON.parse(stdout.toString()));
     });
   });
@@ -124,12 +120,17 @@ window.addEventListener('load', async () => {
     }
   });
 
+  // get index
+  if (opts.index) var index = Number(opts.index) - 1;
+  else var index = 0;
+  var i = index;
+
   // prepare video and queue
-  var info = await getVideo(arr[0]);
+  var info = await getVideo(i, arr[i]);
   videoElems[0].src = info.thumbnail;
   videoElems[1].innerText = info.fulltitle;
   if (arr.length > 1) {
-    queueInfo = await getVideo(arr[1]);
+    queueInfo = await getVideo(i, arr[i + 1]);
     queueElems[0].src = queueInfo.thumbnail;
     queueElems[1].innerText = queueInfo.fulltitle;
   } else {
@@ -137,13 +138,12 @@ window.addEventListener('load', async () => {
   }
 
   // video download loop
-  var i = 0;
   while (i < arr.length) {
     progress.innerText = `Download progress: ${i + 1} / ${arr.length}`;
 
     // information download
     videoElems[2].innerText = 'Getting info';
-    if (i != 0) {
+    if (i != index) {
       // get to da choppa
       info = {...queueInfo};
 
@@ -153,7 +153,7 @@ window.addEventListener('load', async () => {
 
       // get next in queue if exist
       if (arr[i + 1]) {
-        queueInfo = await getVideo(arr[i + 1]);
+        queueInfo = await getVideo(i, arr[i + 1]);
         queueElems[0].src = queueInfo.thumbnail;
         queueElems[1].innerText = queueInfo.fulltitle;
       } else {
@@ -200,7 +200,7 @@ window.addEventListener('load', async () => {
     }
 
     // download it!
-    await downloadVideo(info, videoPath);
+    await downloadVideo(i, info, videoPath);
     videoElems[3].set(0);
 
     i++;

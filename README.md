@@ -5,14 +5,14 @@ Supported platforms: Win x64
 <br>
 <br>
 <b>Features:</b>
-<ul>
-  <li>Download playlist or channel</li>
-  <li>Simple to use gui</li>
-  <li>MP4 or WebM file format</li>
-  <li>Choose specific videos or index</li>
-  <li>Save video metadata and thumbnails</li>
-  <li>Based on <a href="https://github.com/ytdl-org/youtube-dl/">youtube-dl</a></li>
-</ul>
+
+* Download playlist or channel
+* Simple to use gui
+* MP4 or WebM file format
+* Choose specific videos or index
+* Save video metadata and thumbnails
+* Based on <a href="https://github.com/ytdl-org/youtube-dl/">youtube-dl</a>
+
 
 ## Download
 If you just want to download the program you can do that <a href="https://github.com/risbun/ZenLoad/releases">here</a>.
@@ -27,14 +27,12 @@ Or you can just test it out
 <pre>npm start</pre>
 
 ## Libraries used
-<ul>
-  <li><a href="https://github.com/ytdl-org/youtube-dl/">youtube-dl</a></li>
-  <li><a href="https://github.com/ghjbnm/youtube-dl-wrap">youtube-dl-wrap</a></li>
-  <li><a href="https://ffmpeg.org">ffmpeg</a></li>
-  <li><a href="https://github.com/onikienko/7zip-min">7zip-min</a></li>
-  <li><a href="https://electronjs.org">electron</a></li>
-  <li><a href="https://github.com/kimmobrunfeldt/progressbar.js/">progressbar.js</a></li>
-  <li><a href="https://github.com/ethanent/phin">phin</a></li>
-  <li><a href="https://github.com/TimeForANinja/node-ytpl">ytpl</a></li>
-</ul>
-  
+* [youtube-dl](https://youtube-dl.org/)
+* [ffmpeg](https://ffmpeg.org/)
+* [adm-zip](https://github.com/cthackers/adm-zip)
+* [electron](https://www.electronjs.org)
+* [electron-builder](https://www.electron.build/)
+* [node-fetch](https://github.com/bitinn/node-fetch)
+* [progressbar.js](https://kimmobrunfeldt.github.io/progressbar.js/)
+* [youtube-dl-wrap](https://github.com/ghjbnm/youtube-dl-wrap)
+* [youtube-dl-wrap](https://github.com/TimeForANinja/node-ytpl)

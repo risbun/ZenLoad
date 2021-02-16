@@ -1,6 +1,6 @@
 {
   "name": "ZenLoad",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "ZenLoad",
   "main": "index.js",
   "scripts": {
@@ -13,12 +13,12 @@
   "author": "risbun",
   "license": "Unlicense",
   "devDependencies": {
-    "7zip-min": "^1.3.0",
+    "adm-zip": "^0.5.2",
     "electron": "^11.2.3",
     "electron-builder": "^22.9.1"
   },
   "dependencies": {
-    "phin": "^3.5.1",
+    "node-fetch": "^2.6.1",
     "progressbar.js": "^1.1.0",
     "youtube-dl-wrap": "^2.0.0",
     "ytpl": "^2.0.5"

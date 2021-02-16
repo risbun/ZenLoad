@@ -109,12 +109,12 @@ window.addEventListener('load', async () => {
 
   // final download button
   document.querySelector('#settingsDownload').addEventListener('click', async () => {
-    var continueNum = document.querySelector('#settingsContinue');
-    if (continueNum.value && continueNum.value < 0) alert('Continue number can\'t be negative.');
+    var index = document.querySelector('#settingsContinue');
+    if (index.value && index.value < 1) alert('Continue number can\'t be negative.');
     else if (ignoredVids.length >= pl.items.length) alert('You can\'t just download 0 videos.');
-    else if (continueNum.value && continueNum.value > (pl.items.length - ignoredVids.length)) alert('Continue number can\'t be bigger than length silly.');
+    else if (index.value && index.value > (pl.items.length - ignoredVids.length)) alert('Continue number can\'t be bigger than length silly.');
     else {
-      var arr = await extractIDs(pl.items, continueNum.value);
+      var arr = await extractIDs(pl.items);
       localStorage.setItem('playlist', JSON.stringify(arr));
       localStorage.setItem('options', JSON.stringify({
         thumb: (document.querySelector('#settingsThumbs').className == 'fas fa-check-square'),
@@ -122,7 +122,8 @@ window.addEventListener('load', async () => {
         seperate: (document.querySelector('#settingsSeperate').className == 'fas fa-check-square'),
         res: document.querySelector('#settingsRes').value,
         format: document.querySelector('#settingsFormat').value,
-        outputPath: outputPath
+        outputPath: outputPath,
+        index: index.value
       }));
       ipcRenderer.send('window', 'files/download.html');
     }
