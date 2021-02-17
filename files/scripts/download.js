@@ -32,7 +32,7 @@ const failed = (msg, index) => {
   document.querySelector('.queue').classList.toggle('hidden', true);
 
   document.querySelector('.video-done-icon').className = 'fas fa-times-circle video-done-icon';
-  document.querySelector('.video-done span').innerText = `${msg}\n${index + 1}`;
+  document.querySelector('.video-done span').innerText = `${msg}\n${index}`;
 
   document.querySelector('.video-done').classList.toggle('hidden', false);
   if (current) current.kill();
@@ -82,7 +82,7 @@ const downloadVideo = (i, info, videoPath) => {
 const getVideo = (i, id) => {
   return new Promise((res, rej) => {
     var options = DEFAULT_OPTIONS.concat(['-j', `https://youtu.be/${id}`]);
-    var proc = cp.execFile(YOTUBEDL_PATH, options, { maxBuffer: 16384 * 8192 }, (err, stdout, stderr) => {
+    var proc = cp.execFile(YOTUBEDL_PATH, options, (err, stdout, stderr) => {
       if (err) return failed(stderr, i);
       res(JSON.parse(stdout.toString()));
     });
