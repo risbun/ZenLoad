@@ -24,9 +24,8 @@ const clickVid = (e) => {
 }
 
 // extract all ids from playlist object
-const extractIDs = (items, continueNum) => {
+const extractIDs = (items) => {
   return new Promise((res, rej) => {
-    if (continueNum) items.splice(0, continueNum);
     var arr = [], last;
     items.forEach((item, i) => {
       if (item.isPlayable && !ignoredVids.includes(i)) arr.push(item.id);
