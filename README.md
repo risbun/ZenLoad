@@ -7,7 +7,6 @@
 Download playlists or channels from YouTube including metadata and thumbnails. \
 \
 **Features:**
-
 * Download playlist or channel
 * Simple to use gui
 * MP4 or WebM file format
