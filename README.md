@@ -1,6 +1,10 @@
 # ZenLoad
-Download entire playlists or channels from YT.\
-Supported platforms: Win x64\
+![Size](https://img.shields.io/github/languages/code-size/risbun/ZenLoad)
+![Downloads](https://img.shields.io/github/downloads/risbun/ZenLoad/total)
+![Version](https://img.shields.io/github/package-json/v/risbun/ZenLoad)
+
+## Overview
+Download playlists or channels from YouTube including metadata and thumbnails. \
 \
 **Features:**
 
@@ -10,6 +14,11 @@ Supported platforms: Win x64\
 * Choose specific videos or index
 * Save video metadata and thumbnails
 * Based on [youtube-dl](https://youtube-dl.org/)
+
+Supported platforms:
+* Windows x86_64
+
+Support for other platforms are planned but not yet done.
 
 ## Download
 If you just want to download the program you can do that [here](https://github.com/risbun/ZenLoad/releases)
